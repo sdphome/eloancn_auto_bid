@@ -2,11 +2,19 @@
 # -*-coding: utf-8 -*-
 from selenium import webdriver
 from time import sleep
-from selenium.webdriver.common.keys import Keys #需要引入 keys 包
+from selenium.webdriver.common.keys import Keys
 import os
+import re
 import unicodedata
+import urllib
+import urllib2
+from BeautifulSoup import BeautifulSoup
 
-""" need put chromedriver.exe path into PATH
+"""
+need put chromedriver.exe path into PATH
+1. PySide for UI
+2. selenium for website operation
+3. BeautifulSoup for parse html
 """
 
 global login_url, tender_url, username, password, paypasswd, browser, balance, total_interest, total_assets
@@ -38,6 +46,7 @@ def login_eloance():
         browser.get(login_url)
         browser.execute_script('window.stop()')
     except:
+        # TODO : check if enter successful
         pass
 
     print("login website!")
@@ -51,9 +60,10 @@ def login_eloance():
         browser.execute_script('window.stop()')
         print("stop load this website")
     except:
+        # TODO : check if login successful
         pass
 
-    # TODO: need check if login successful
+
     print("login successful!!!")
 
 
@@ -68,31 +78,52 @@ def get_balance():
     global balance, browser
     webdata = browser.find_element_by_id("statField2").text
     balance = unicode_to_int(webdata)
-    print("userful balance is %d元" %balance)
+    print("userful balance is %d¥" %balance)
 
 def get_total_interest():
     global total_interest, browser
     webdata = browser.find_element_by_id("accumulative").text
     total_interest = unicode_to_int(webdata)
-    print("total interest is %d元" %total_interest)    
+    print("total interest is %d¥" %total_interest)    
 
 def get_total_assets():
     global total_interest, browser
     webdata = browser.find_element_by_id("total_assets").text
     total_assets = unicode_to_int(webdata)
-    print("total assets is %d元" %total_assets)
+    print("total assets is %d¥" %total_assets)
 
 def get_money():
     get_balance()
     get_total_interest()
     get_total_assets()
 
+"""
+1. get >18% bid
+2. sort bid money
+3. check if balance > max bid money
+4. get avaliable id to invest
+
+## condiction:class="lendtable"/tenderid/
+## each bid have 6 items
+need return a list:{[tenderid, time, rate, remainder], [...]}
+"""
+
+def parse_target():
+    global tender_url
+    lend_page = urllib2.urlopen(tender_url).read()
+    soup = BeautifulSoup(''.join(lend_page))
+    print(soup.findAll(attrs={'class' : re.compile("lendtable")}))
+
+
 def main():
     init_global()
-    open_chrome()
-    login_eloance()
-    get_money()
+    #open_chrome()
+    #login_eloance()
+    #get_money()
+
+    parse_target()
     print("End")
+
     #browser.get(tender_url)
     #browser.quit()
 
