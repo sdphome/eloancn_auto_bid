@@ -64,7 +64,6 @@ def login_eloance():
         # TODO : check if login successful
         pass
 
-
     print("login successful!!!")
 
 
@@ -98,8 +97,22 @@ def get_money():
     get_total_interest()
     get_total_assets()
 
+def parse_lend_time(tag):
+    time_tag = str(tag.contents[1].contents[0])
+    time = (time_tag.split('>')[1]).split('<')[0]
+    return int(time)
+
+def parse_lend_schedule(tag):
+    schedult_tag = str(tag.contents[1].contents[0].contents[0])
+    schedult = (schedult_tag.split('%')[1]).split('>')[1]
+    return int(schedult)
+
+def parse_other(tag):
+    return 60000
+
+
 """
-1. get >18% bid
+1. get >=18% bid
 2. sort bid money
 3. check if balance > max bid money
 4. get avaliable id to invest
@@ -117,23 +130,46 @@ def parse_target():
     lend_page = urllib2.urlopen(tender_url).read()
     soup = BeautifulSoup(''.join(lend_page))
     lendtable = soup.findAll(attrs={'class' : re.compile("lendtable")})  # get all lendtable, type:BeautifulSoup.ResultSet
-    for c1_child in lendtable:                                  # 1
-        for c2_child in c1_child:                               # 2
-            child_type = str(type(c2_child))
-            if child_type == type_Tag:
-                for c3_child in c2_child:                       # 3
-                    child_type = str(type(c3_child))
-                    if child_type == type_Tag:
-                        for c4_child in c3_child:               # 4
-                            child_type = str(type(c4_child))
-                            if child_type == type_Tag:
-                                i = 0
-                                for c5_child in c4_child:       # 5
-                                    i = i + 1
-                                    child_type = str(type(c5_child))
-                                    print(child_type)
-                                    print(c5_child)
+    c1_child = lendtable[0]         # 1
+    c2_child = c1_child.contents[1] # 2
 
+    # TODO: if 100%, break
+    # begin dividing:
+    i = 0
+    j = 0
+    data = []         # new array
+    for c3_child in c2_child:
+        if i % 12 == 0:
+            i = 0;
+            dic = {}    # new dictionary
+            # TODO: don't append this dic if schedule == 100
+            data.append(dic)
+            j = j + 1
+            print("round : %d" %j)
+
+        i = i + 1
+
+        """
+        i == 2:  lender pic, useless
+        i == 4:  title and lender name, useless
+        i == 6:  lend money, tender_id and interest rate(very useful) *****
+        i == 8:  lend time, useful   **
+        i == 10: schedule, useful(first check)    ***
+        i == 12: count, useless
+        """
+        if i == 8:
+            time = parse_lend_time(c3_child)
+            dic['time'] = time
+            print("month: %d" %time)
+        elif i == 10:
+            schedule = parse_lend_schedule(c3_child)
+            dic['schedule'] = schedule
+            print("schedule : %d%s" %(schedule, "%"))
+        elif i == 6:
+            list_other = parse_other(c3_child)
+            dic['other'] = list_other
+
+    return data
 
 def main():
     init_global()
@@ -150,3 +186,4 @@ def main():
 # main function
 if __name__ == '__main__':
     main()
+
