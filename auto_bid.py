@@ -10,6 +10,7 @@ import urllib
 import urllib2
 from BeautifulSoup import BeautifulSoup
 
+
 """
 need put chromedriver.exe path into PATH
 1. PySide for UI
@@ -34,7 +35,7 @@ def init_global():
 def open_chrome():
     global browser
     browser = webdriver.Chrome()
-    browser.maximize_window()  #将浏览器最大化
+    browser.maximize_window()
 
 
 def login_eloance():
@@ -110,9 +111,28 @@ need return a list:{[tenderid, time, rate, remainder], [...]}
 
 def parse_target():
     global tender_url
+    type_NavigableString = "<class 'BeautifulSoup.NavigableString'>"
+    type_Tag = "<class 'BeautifulSoup.Tag'>"
+    type_unicode = "<type 'unicode'>"
     lend_page = urllib2.urlopen(tender_url).read()
     soup = BeautifulSoup(''.join(lend_page))
-    print(soup.findAll(attrs={'class' : re.compile("lendtable")}))
+    lendtable = soup.findAll(attrs={'class' : re.compile("lendtable")})  # get all lendtable, type:BeautifulSoup.ResultSet
+    for c1_child in lendtable:                                  # 1
+        for c2_child in c1_child:                               # 2
+            child_type = str(type(c2_child))
+            if child_type == type_Tag:
+                for c3_child in c2_child:                       # 3
+                    child_type = str(type(c3_child))
+                    if child_type == type_Tag:
+                        for c4_child in c3_child:               # 4
+                            child_type = str(type(c4_child))
+                            if child_type == type_Tag:
+                                i = 0
+                                for c5_child in c4_child:       # 5
+                                    i = i + 1
+                                    child_type = str(type(c5_child))
+                                    print(child_type)
+                                    print(c5_child)
 
 
 def main():
