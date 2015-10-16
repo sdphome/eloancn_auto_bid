@@ -98,17 +98,25 @@ def get_money():
     get_total_assets()
 
 def parse_lend_time(tag):
-    time_tag = str(tag.contents[1].contents[0])
-    time = (time_tag.split('>')[1]).split('<')[0]
+    time_str = str(tag.contents[1].contents[0])
+    time = (time_str.split('>')[1]).split('<')[0]
     return int(time)
 
 def parse_lend_schedule(tag):
-    schedult_tag = str(tag.contents[1].contents[0].contents[0])
-    schedult = (schedult_tag.split('%')[1]).split('>')[1]
+    schedult_str = str(tag.contents[1].contents[0].contents[0])
+    schedult = (schedult_str.split('%')[1]).split('>')[1]
     return int(schedult)
 
 def parse_other(tag):
-    return 60000
+    money_str = str(tag.contents[1].contents[0])
+    lender_id_tag = tag.contents[3].contents[1]
+    rate_str = str(lender_id_tag.contents[0])
+    lender_id = (str(lender_id_tag)).split('_')[1]
+    #lender_id = int(lender_id_str.split('_')[1])
+    money = int(money_str[3:].replace(',', ''))
+    rate = int(rate_str[:-1])
+    other = [money, rate, lender_id]
+    return other
 
 
 """
@@ -118,11 +126,12 @@ def parse_other(tag):
 4. get avaliable id to invest
 
 ## condiction:class="lendtable"/tenderid/
-## each bid have 6 items
-need return a list:{[tenderid, time, rate, remainder], [...]}
+## each bid have 4 items
+## id: needAmount_189691
+need return a list:{[tenderid, time, rate, schedule], [...]}
 """
 
-def parse_target():
+def parse_lendtable():
     global tender_url
     type_NavigableString = "<class 'BeautifulSoup.NavigableString'>"
     type_Tag = "<class 'BeautifulSoup.Tag'>"
@@ -137,15 +146,14 @@ def parse_target():
     # begin dividing:
     i = 0
     j = 0
-    data = []         # new array
+    table = []         # new array
     for c3_child in c2_child:
         if i % 12 == 0:
             i = 0;
             dic = {}    # new dictionary
             # TODO: don't append this dic if schedule == 100
-            data.append(dic)
+            table.append(dic)
             j = j + 1
-            print("round : %d" %j)
 
         i = i + 1
 
@@ -160,16 +168,23 @@ def parse_target():
         if i == 8:
             time = parse_lend_time(c3_child)
             dic['time'] = time
-            print("month: %d" %time)
         elif i == 10:
+            pass
             schedule = parse_lend_schedule(c3_child)
             dic['schedule'] = schedule
-            print("schedule : %d%s" %(schedule, "%"))
         elif i == 6:
-            list_other = parse_other(c3_child)
-            dic['other'] = list_other
+            other = parse_other(c3_child)
+            dic['lender_id'] = other.pop()
+            dic['rate'] = other.pop()
+            dic['money'] = other.pop()
 
-    return data
+    return table
+
+def process_lendtable(table):
+    for each in table:
+        print(each)
+
+
 
 def main():
     init_global()
@@ -177,7 +192,9 @@ def main():
     #login_eloance()
     #get_money()
 
-    parse_target()
+    lendtable = parse_lendtable()
+    process_lendtable(lendtable)
+
     print("End")
 
     #browser.get(tender_url)
