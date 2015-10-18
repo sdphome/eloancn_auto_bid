@@ -3,7 +3,9 @@
 # Import required module
 import sys
 import time
-from PySide.QtGui import QApplication, QWidget, QLabel, QIcon, QToolTip, QFont
+from PySide.QtGui import QApplication, QWidget, QLabel, QIcon, QToolTip, QFont, QPushButton, QMessageBox
+
+global myApp
 
 class SampleWindow(QWidget):
     """ Our main window class
@@ -36,7 +38,7 @@ class SampleWindow(QWidget):
 
         myIcon2 = QIcon('eloancn_logo.png')
         myLabel2 = QLabel('sample', self)
-        pixmap2 = myIcon2.pixmap(50, 50, QIcon.Disabled, QIcon.Off)
+        pixmap2 = myIcon2.pixmap(50, 50, QIcon.Disabled, QIcon.On)
         myLabel2.setPixmap(pixmap2)
         myLabel2.move(50, 0)
         myLabel1.setToolTip('Disabled Icon')
@@ -48,13 +50,36 @@ class SampleWindow(QWidget):
         myLabel2.move(100, 0)
         myLabel1.setToolTip('Selected Icon')
 
+    def quitApp(self):
+        global myApp
+        userInfo = QMessageBox.question(self, 'Confirmation',
+                    "This will quit the application. Do you want to continue?",
+                        QMessageBox.Yes | QMessageBox.No)
+        if userInfo == QMessageBox.Yes:
+            myApp.quit()
+        else:
+            pass
+
+    def setButton(self):
+        myButton = QPushButton('Quit', self)
+        myButton.move(50, 100)
+        myButton.clicked.connect(self.quitApp)
+
+    def center(self):
+        qRect = self.frameGeometry()
+        conterPoint = QDesktopWidget().availableGeometry().center()
+        qRect.moveCenter(centerPoint)
+        self.move(qRect.topLeft())
+
 if __name__ == '__main__':
+    global myApp
     # Exception Handling
     try:
         myApp = QApplication(sys.argv)
         myWindow = SampleWindow()
         myWindow.setIcon()
         myWindow.setIconModes()
+        #myWindow.setButton()
         myWindow.show()
         myApp.exec_()
         sys.exit(0)
