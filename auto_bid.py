@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 # -*-coding: utf-8 -*-
 from selenium import webdriver
-from time import sleep
+from time import sleep, time, strftime
 from selenium.webdriver.common.keys import Keys
 import os
 import re
 import unicodedata
 import urllib
 import urllib2
+import time
 from BeautifulSoup import BeautifulSoup
 
+import datetime
 
 """
 need put chromedriver.exe path into PATH
@@ -133,58 +135,66 @@ need return a list:{[tenderid, time, rate, schedule], [...]}
 
 def parse_lendtable():
     global tender_url
-    type_NavigableString = "<class 'BeautifulSoup.NavigableString'>"
-    type_Tag = "<class 'BeautifulSoup.Tag'>"
-    type_unicode = "<type 'unicode'>"
-    lend_page = urllib2.urlopen(tender_url).read()
-    soup = BeautifulSoup(''.join(lend_page))
-    lendtable = soup.findAll(attrs={'class' : re.compile("lendtable")})  # get all lendtable, type:BeautifulSoup.ResultSet
-    c1_child = lendtable[0]         # 1
-    c2_child = c1_child.contents[1] # 2
+    table = [] # new array
 
-    # TODO: if 100%, break
-    # begin dividing:
-    i = 0
-    j = 0
-    table = []         # new array
-    for c3_child in c2_child:
-        if i % 12 == 0:
-            i = 0;
-            dic = {}    # new dictionary
-            # TODO: don't append this dic if schedule == 100
-            table.append(dic)
-            j = j + 1
+    try:
+        lend_page = urllib2.urlopen(tender_url).read()
 
-        i = i + 1
+        soup = BeautifulSoup(''.join(lend_page))
+        lendtable = soup.findAll(attrs={'class' : re.compile("lendtable")})  # get all lendtable, type:BeautifulSoup.ResultSet
+        c1_child = lendtable[0]         # 1
+        c2_child = c1_child.contents[1] # 2
 
-        """
-        i == 2:  lender pic, useless
-        i == 4:  title and lender name, useless
-        i == 6:  lend money, tender_id and interest rate(very useful) *****
-        i == 8:  lend time, useful   **
-        i == 10: schedule, useful(first check)    ***
-        i == 12: count, useless
-        """
-        if i == 8:
-            time = parse_lend_time(c3_child)
-            dic['time'] = time
-        elif i == 10:
-            pass
-            schedule = parse_lend_schedule(c3_child)
-            dic['schedule'] = schedule
-        elif i == 6:
-            other = parse_other(c3_child)
-            dic['lender_id'] = other.pop()
-            dic['rate'] = other.pop()
-            dic['money'] = other.pop()
+        # TODO: if 100%, break
+        # begin dividing:
+        i = 0
+        j = 0       
+        dic = {}
+        for c3_child in c2_child:
+            i = i + 1
+
+            """
+            i == 2:  lender pic, useless
+            i == 4:  title and lender name, useless
+            i == 6:  lend money, tender_id and interest rate(very useful) *****
+            i == 8:  lend time, useful   **
+            i == 10: schedule, useful(first check)    ***
+            i == 12: count, useless
+            """
+            if i == 8:
+                time = parse_lend_time(c3_child)
+                dic['time'] = time
+            elif i == 10:
+                pass
+                schedule = parse_lend_schedule(c3_child)
+                dic['schedule'] = schedule
+                dic['rest'] = dic['money']/100*(100-dic['schedule'])
+            elif i == 6:
+                other = parse_other(c3_child)
+                dic['lender_id'] = other.pop()
+                dic['rate'] = other.pop()
+                dic['money'] = other.pop()
+
+            if i % 12 == 0:
+                i = 0;
+                j = j + 1
+                # filter table
+                if dic['schedule'] == 100 or dic['rate'] < 18:
+                    #print("Drop this bid, schedule=%d, rate=%d." %(dic['schedule'], dic['rate']))
+                    pass
+                else:
+                    data.append(dic)
+                dic = {}    # new dictionary
+    except:
+        print("Internal Server Error")
+        pass
 
     return table
 
-def process_lendtable(table):
-    for each in table:
-        print(each)
-
-
+def sort_lendtable(table):
+    #table.sort(lambda x, y:cmp(x['rest'], y['rest']))
+    table = sorted(table, key=lambda x:x['money'], reverse=True)
+    return table
 
 def main():
     init_global()
@@ -192,8 +202,17 @@ def main():
     #login_eloance()
     #get_money()
 
-    lendtable = parse_lendtable()
-    process_lendtable(lendtable)
+    times = 1
+    while True:
+        lendtable = parse_lendtable()
+        lendtable = sort_lendtable(lendtable)
+
+        if lendtable == []:
+            print("%s --- check %d times." %(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), times))
+            times = times + 1
+        else:
+            print lendtable
+            break
 
     print("End")
 
