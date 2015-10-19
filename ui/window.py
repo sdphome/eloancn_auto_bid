@@ -1,9 +1,10 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 # Import required module
 import sys
 import time
-from PySide.QtGui import QApplication, QWidget, QLabel, QIcon, QToolTip, QFont, QPushButton, QMessageBox
+from PySide.QtGui import *
 
 global myApp
 
@@ -14,12 +15,9 @@ class SampleWindow(QWidget):
     # Constructor function
     def __init__(self):
         QWidget.__init__(self)
-        self.setWindowTitle("Icon Sample")
-        self.setGeometry(300, 300, 200, 150)
-        self.setMinimumHeight(100)
-        self.setMinimumWidth(250)
-        self.setMaximumHeight(200)
-        self.setMaximumWidth(800)
+        self.setWindowTitle(u'翼龙贷自动投标')
+        self.setGeometry(300, 300, 800, 600)
+
         QToolTip.setFont(QFont("Decorative", 8, QFont.Bold))
         self.setToolTip('Our main window')
 
@@ -29,26 +27,30 @@ class SampleWindow(QWidget):
         appIcon = QIcon('eloancn_logo.png')
         self.setWindowIcon(appIcon)
 
-    def setIconModes(self):
-        myIcon1 = QIcon('eloancn_logo.png')
-        myLabel1 = QLabel('sample', self)
-        pixmap1 = myIcon1.pixmap(50, 50, QIcon.Active, QIcon.On)
-        myLabel1.setPixmap(pixmap1)
-        myLabel1.setToolTip('Active Icon')
+    def setInputWidget(self):
+        self.myNameButton = QPushButton(u'用户名', self)
+        self.myLoginPasswdButton = QPushButton(u'登录密码', self)
+        self.myPayPasswdButton = QPushButton(u'支付密码', self)
+        self.myMonthButton = QPushButton(u'月数<=', self)
+        self.myRateButton = QPushButton(u'利率>=', self)
 
-        myIcon2 = QIcon('eloancn_logo.png')
-        myLabel2 = QLabel('sample', self)
-        pixmap2 = myIcon2.pixmap(50, 50, QIcon.Disabled, QIcon.On)
-        myLabel2.setPixmap(pixmap2)
-        myLabel2.move(50, 0)
-        myLabel1.setToolTip('Disabled Icon')
+        self.myNameLE = QLineEdit(self)
+        self.myLoginPasswdLE = QLineEdit(self)
+        self.myPayPasswdLE = QLineEdit(self)
+        self.myMonthLE = QLineEdit(self)
+        self.myRateLE = QLineEdit(self)
 
-        myIcon3 = QIcon('eloancn_logo.png')
-        myLabel3 = QLabel('sample', self)
-        pixmap3 = myIcon3.pixmap(50, 50, QIcon.Selected, QIcon.On)
-        myLabel3.setPixmap(pixmap3)
-        myLabel2.move(100, 0)
-        myLabel1.setToolTip('Selected Icon')
+        self.myLayout = QFormLayout()
+        self.myLayout.addRow(self.myNameButton, self.myNameLE)
+        self.myLayout.addRow(self.myLoginPasswdButton, self.myLoginPasswdLE)
+        self.myLayout.addRow(self.myPayPasswdButton, self.myPayPasswdLE)
+        self.myLayout.addRow(self.myMonthButton, self.myMonthLE)
+        self.myLayout.addRow(self.myRateButton, self.myRateLE)
+
+        self.setLayout(self.myLayout)
+        self.setGeometry(400, 400, 400, 400)
+        #self.setWindowTitle(u'翼龙贷自动投标')
+        self.show()
 
     def quitApp(self):
         global myApp
@@ -78,7 +80,8 @@ if __name__ == '__main__':
         myApp = QApplication(sys.argv)
         myWindow = SampleWindow()
         myWindow.setIcon()
-        myWindow.setIconModes()
+        myWindow.setInputWidget()
+        #myWindow.setIconModes()
         #myWindow.setButton()
         myWindow.show()
         myApp.exec_()

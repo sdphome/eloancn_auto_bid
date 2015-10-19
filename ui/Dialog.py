@@ -9,19 +9,19 @@ class MyInputDialog(QWidget):
         QWidget.__init__(self)
 
         self.myNameButton = QPushButton(u'用户名', self)
-        self.myNameButton.clicked.connect(self.showNameDialog)
+        #self.myNameButton.clicked.connect(self.showNameDialog)
 
         self.myLoginPasswdButton = QPushButton(u'登录密码', self)
-        self.myLoginPasswdButton.clicked.connect(self.showLoginPasswdDialog)
+        #self.myLoginPasswdButton.clicked.connect(self.showLoginPasswdDialog)
 
         self.myPayPasswdButton = QPushButton(u'支付密码', self)
-        self.myPayPasswdButton.clicked.connect(self.showPayPasswdDialog)
+        #self.myPayPasswdButton.clicked.connect(self.showPayPasswdDialog)
 
         self.myMonthButton = QPushButton(u'月数<=', self)
-        self.myMonthButton.clicked.connect(self.showMonthDialog)
+        #self.myMonthButton.clicked.connect(self.showMonthDialog)
 
         self.myRateButton = QPushButton(u'利率>=', self)
-        self.myRateButton.clicked.connect(self.showRateDialog)
+        #self.myRateButton.clicked.connect(self.showRateDialog)
 
         self.myNameLE = QLineEdit(self)
         self.myLoginPasswdLE = QLineEdit(self)
