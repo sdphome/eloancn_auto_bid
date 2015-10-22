@@ -99,6 +99,25 @@ def get_money():
     get_total_interest()
     get_total_assets()
 
+def load_tend_web():
+    global tender_url, browser
+    # load tender website
+    try:
+        browser.set_page_load_timeout(4)
+        browser.get(tender_url)
+        browser.execute_script('window.stop()')
+    except:
+        # TODO : check if enter successful
+        pass
+
+def auto_bid(lendtable):
+    global browser
+    #load_tend_web()
+    max_rest_no = lendtable[0]['no']
+    xpath_id = 5 * max_rest_no
+    xpath = "/html/body/div[8]/div[2]/div[4]/dl/dd[" + str(xpath_id) + "]/a"
+    browser.find_element_by_xpath(xpath).click()
+
 def parse_lend_time(tag):
     time_str = str(tag.contents[1].contents[0])
     time = (time_str.split('>')[1]).split('<')[0]
@@ -111,13 +130,13 @@ def parse_lend_schedule(tag):
 
 def parse_other(tag):
     money_str = str(tag.contents[1].contents[0])
-    lender_id_tag = tag.contents[3].contents[1]
-    rate_str = str(lender_id_tag.contents[0])
-    lender_id = (str(lender_id_tag)).split('_')[1]
-    #lender_id = int(lender_id_str.split('_')[1])
+    tender_id_tag = tag.contents[3].contents[1]
+    rate_str = str(tender_id_tag.contents[0])
+    tender_id = (str(tender_id_tag)).split('_')[1]
+    #tender_id = int(tender_id_str.split('_')[1])
     money = int(money_str[3:].replace(',', ''))
     rate = int(rate_str[:-1])
-    other = [money, rate, lender_id]
+    other = [money, rate, tender_id]
     return other
 
 
@@ -171,15 +190,16 @@ def parse_lendtable():
                 dic['rest'] = dic['money']/100*(100-dic['schedule'])
             elif i == 6:
                 other = parse_other(c3_child)
-                dic['lender_id'] = other.pop()
+                dic['tender_id'] = other.pop()
                 dic['rate'] = other.pop()
                 dic['money'] = other.pop()
 
             if i % 12 == 0:
                 i = 0;
                 j = j + 1
+                dic['no'] = j
                 # filter table
-                if dic['schedule'] == 100 or dic['rate'] < 18:
+                if dic['rest'] == 0 or dic['rate'] < 18:
                     #print("Drop this bid, schedule=%d, rate=%d." %(dic['schedule'], dic['rate']))
                     pass
                 else:
@@ -214,6 +234,8 @@ def main():
             for dic in lendtable:
                 print dic
             break
+
+    auto_bid(lendtable)   
 
     print("End")
 
