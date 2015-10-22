@@ -183,7 +183,7 @@ def parse_lendtable():
                     #print("Drop this bid, schedule=%d, rate=%d." %(dic['schedule'], dic['rate']))
                     pass
                 else:
-                    data.append(dic)
+                    table.append(dic)
                 dic = {}    # new dictionary
     except:
         print("Internal Server Error")
@@ -193,7 +193,7 @@ def parse_lendtable():
 
 def sort_lendtable(table):
     #table.sort(lambda x, y:cmp(x['rest'], y['rest']))
-    table = sorted(table, key=lambda x:x['money'], reverse=True)
+    table = sorted(table, key=lambda x:x['rest'], reverse=True)
     return table
 
 def main():
@@ -211,7 +211,8 @@ def main():
             print("%s --- check %d times." %(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), times))
             times = times + 1
         else:
-            print lendtable
+            for dic in lendtable:
+                print dic
             break
 
     print("End")
