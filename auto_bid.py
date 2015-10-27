@@ -3,12 +3,10 @@
 from selenium import webdriver
 from time import sleep, time, strftime
 from selenium.webdriver.common.keys import Keys
-import os
-import re
+import os, sys, re
 import unicodedata
-import urllib
-import urllib2
-import time
+import urllib, urllib2
+from PIL import Image
 from BeautifulSoup import BeautifulSoup
 
 import datetime
@@ -33,6 +31,12 @@ def init_global():
     total_interest = 0
     total_assets = 0
 
+def cur_file_dir():
+    path = sys.path[0]
+    if os.path.isdir(path):
+        return path
+    elif os.path.isfile(path):
+        return os.path.dirname(path)
 
 def open_chrome():
     global browser
@@ -53,7 +57,8 @@ def login_eloance():
         pass
 
     print("login website!")
-
+    elem = browser.find_element_by_id("loginName")
+    #screen_shot(elem)
     browser.find_element_by_id("loginName").send_keys([username, Keys.TAB, password, Keys.ENTER])
     sleep(5)
     print("Enter username and password")
@@ -65,6 +70,9 @@ def login_eloance():
     except:
         # TODO : check if login successful
         pass
+
+    #cookie= browser.get_cookies()
+    #print cookie
 
     print("login successful!!!")
 
@@ -80,19 +88,19 @@ def get_balance():
     global balance, browser
     webdata = browser.find_element_by_id("statField2").text
     balance = unicode_to_int(webdata)
-    print("userful balance is %d¥" %balance)
+    print("userful balance is %d元" %balance)
 
 def get_total_interest():
     global total_interest, browser
     webdata = browser.find_element_by_id("accumulative").text
     total_interest = unicode_to_int(webdata)
-    print("total interest is %d¥" %total_interest)    
+    print("total interest is %d元" %total_interest) 
 
 def get_total_assets():
     global total_interest, browser
     webdata = browser.find_element_by_id("total_assets").text
     total_assets = unicode_to_int(webdata)
-    print("total assets is %d¥" %total_assets)
+    print("total assets is %d元" %total_assets)
 
 def get_money():
     get_balance()
@@ -110,13 +118,40 @@ def load_tend_web():
         # TODO : check if enter successful
         pass
 
-def auto_bid(lendtable):
+def get_verfi_code():
     global browser
+    # get current path
+    cur_path = cur_file_dir()
+
+    shot_path = cur_path + r"\shot.png"
+
+    browser.save_screenshot(shot_path)
+    #crop the verify code image
+    im = Image.open(shot_path)
+    box = (500, 300, 800, 600)
+    region = im.crop(box)
+    verify_path = cur_path + r"\verify.png"
+    region.save(verify_path)
+
+def auto_bid(lendtable):
+    global browser, paypasswd
     #load_tend_web()
     max_rest_no = lendtable[0]['no']
     xpath_id = 5 * max_rest_no
     xpath = "/html/body/div[8]/div[2]/div[4]/dl/dd[" + str(xpath_id) + "]/a"
+    browser.save_screenshot("before.png")
     browser.find_element_by_xpath(xpath).click()
+    sleep(1)
+    browser.save_screenshot("click.png")
+    # maybe need input money
+    # input pay password
+    browser.find_element_by_xpath("//*[@id=\"paypassowrd\"]").send_keys(paypasswd)
+    browser.save_screenshot("enter_paypass.png")
+    # get and input verify code
+    verify_code = get_verfi_code()
+    browser.find_element_by_xpath("//*[@id=\"tenderRecordRandCode\"]").send_keys(str(verify_code))
+    # make sure bid
+    browser.find_element_by_xpath("//*[@id=\"fastLender_1\"]/div[2]/div/p[6]/input[2]").click()
 
 def parse_lend_time(tag):
     time_str = str(tag.contents[1].contents[0])
@@ -158,7 +193,12 @@ def parse_lendtable():
 
     try:
         lend_page = urllib2.urlopen(tender_url).read()
+    except:
+        lend_page = ""
+        print("Internal Server Error")
+        pass
 
+    if lend_page != "":
         soup = BeautifulSoup(''.join(lend_page))
         lendtable = soup.findAll(attrs={'class' : re.compile("lendtable")})  # get all lendtable, type:BeautifulSoup.ResultSet
         c1_child = lendtable[0]         # 1
@@ -205,9 +245,6 @@ def parse_lendtable():
                 else:
                     table.append(dic)
                 dic = {}    # new dictionary
-    except:
-        print("Internal Server Error")
-        pass
 
     return table
 
@@ -217,11 +254,13 @@ def sort_lendtable(table):
     return table
 
 def main():
+    global browser
     init_global()
-    #open_chrome()
-    #login_eloance()
-    #get_money()
+    open_chrome()
+    login_eloance()
+    get_money()
 
+"""
     times = 1
     while True:
         lendtable = parse_lendtable()
@@ -241,6 +280,7 @@ def main():
 
     #browser.get(tender_url)
     #browser.quit()
+"""
 
 # main function
 if __name__ == '__main__':
