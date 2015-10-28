@@ -7,6 +7,7 @@ import os, sys, re
 import unicodedata
 import urllib, urllib2
 from PIL import Image
+from pytesseract import image_to_string
 from BeautifulSoup import BeautifulSoup
 
 import datetime
@@ -111,47 +112,79 @@ def load_tend_web():
     global tender_url, browser
     # load tender website
     try:
-        browser.set_page_load_timeout(4)
+        browser.set_page_load_timeout(2)
         browser.get(tender_url)
         browser.execute_script('window.stop()')
     except:
         # TODO : check if enter successful
+        #print("load_tend_web except")
         pass
 
-def get_verfi_code():
+def crop_verify_code(code_name):
     global browser
-    # get current path
-    cur_path = cur_file_dir()
-
-    shot_path = cur_path + r"\shot.png"
-
-    browser.save_screenshot(shot_path)
+    pay_name = "pay.png"
+    browser.save_screenshot(pay_name)
     #crop the verify code image
-    im = Image.open(shot_path)
+    im = Image.open(pay_name)
     box = (500, 300, 800, 600)
     region = im.crop(box)
-    verify_path = cur_path + r"\verify.png"
-    region.save(verify_path)
+    region.save(code_name)
+
+def get_verify_code():
+    threshold = 140
+    code_name = "code.png"
+    table = []
+
+    # get verify code picture
+    crop_verify_code(code_name)
+
+    for i in range(256):
+        if i < threshold:
+            table.append(0)
+        else:
+            table.append(1)
+
+    rep = {'O':'0',
+           'I':'1','L':'1',
+           'Z':'2',
+           'S':'8'
+           };
+    im = Image.open(code_name)
+    imgry = im.convert('L')
+    imgry.save('g'+code_name)
+
+    out = imgry.point(table, '1')
+    out.save('b' + code_name)
+
+    text = image_to_string(out)
+
+    text = text.strip()
+    text = text.upper()
+
+    for r in rep:
+        text = text.replace(r, rep[r])
+    print(text)
+    return text
 
 def auto_bid(lendtable):
     global browser, paypasswd
-    #load_tend_web()
+    load_tend_web()
     max_rest_no = lendtable[0]['no']
     xpath_id = 5 * max_rest_no
     xpath = "/html/body/div[8]/div[2]/div[4]/dl/dd[" + str(xpath_id) + "]/a"
     browser.save_screenshot("before.png")
     browser.find_element_by_xpath(xpath).click()
-    sleep(1)
+    #sleep(1)
     browser.save_screenshot("click.png")
     # maybe need input money
     # input pay password
     browser.find_element_by_xpath("//*[@id=\"paypassowrd\"]").send_keys(paypasswd)
     browser.save_screenshot("enter_paypass.png")
     # get and input verify code
-    verify_code = get_verfi_code()
-    browser.find_element_by_xpath("//*[@id=\"tenderRecordRandCode\"]").send_keys(str(verify_code))
+    verify_code = get_verify_code()
+    browser.find_element_by_xpath("//*[@id=\"tenderRecordRandCode\"]").send_keys(verify_code)
     # make sure bid
-    browser.find_element_by_xpath("//*[@id=\"fastLender_1\"]/div[2]/div/p[6]/input[2]").click()
+    #browser.find_element_by_xpath("//*[@id=\"fastLender_1\"]/div[2]/div/p[6]/input[2]").click()
 
 def parse_lend_time(tag):
     time_str = str(tag.contents[1].contents[0])
@@ -170,7 +203,7 @@ def parse_other(tag):
     tender_id = (str(tender_id_tag)).split('_')[1]
     #tender_id = int(tender_id_str.split('_')[1])
     money = int(money_str[3:].replace(',', ''))
-    rate = int(rate_str[:-1])
+    rate = int(rate_str[0:1])
     other = [money, rate, tender_id]
     return other
 
@@ -258,9 +291,9 @@ def main():
     init_global()
     open_chrome()
     login_eloance()
-    get_money()
+    #get_money()
 
-"""
+
     times = 1
     while True:
         lendtable = parse_lendtable()
@@ -269,6 +302,8 @@ def main():
         if lendtable == []:
             print("%s --- check %d times." %(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), times))
             times = times + 1
+            if times % 200 == 0:
+                load_tend_web()
         else:
             for dic in lendtable:
                 print dic
@@ -280,7 +315,7 @@ def main():
 
     #browser.get(tender_url)
     #browser.quit()
-"""
+
 
 # main function
 if __name__ == '__main__':
