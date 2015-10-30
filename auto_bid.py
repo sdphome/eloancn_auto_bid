@@ -50,7 +50,7 @@ def login_eloance():
 
     # auto login
     try:
-        browser.set_page_load_timeout(10)
+        browser.set_page_load_timeout(5)
         browser.get(login_url)
         browser.execute_script('window.stop()')
     except:
@@ -63,14 +63,6 @@ def login_eloance():
     browser.find_element_by_id("loginName").send_keys([username, Keys.TAB, password, Keys.ENTER])
     sleep(5)
     print("Enter username and password")
-
-    try:
-        browser.set_page_load_timeout(5)        
-        browser.execute_script('window.stop()')
-        print("stop load this website")
-    except:
-        # TODO : check if login successful
-        pass
 
     #cookie= browser.get_cookies()
     #print cookie
@@ -194,7 +186,7 @@ def parse_lend_time(tag):
 def parse_lend_schedule(tag):
     schedult_str = str(tag.contents[1].contents[0].contents[0])
     schedult = (schedult_str.split('%')[1]).split('>')[1]
-    return int(schedult[0:1])
+    return int(schedult[0:3])
 
 def parse_other(tag):
     money_str = str(tag.contents[1].contents[0])
@@ -203,7 +195,7 @@ def parse_other(tag):
     tender_id = (str(tender_id_tag)).split('_')[1]
     #tender_id = int(tender_id_str.split('_')[1])
     money = int(money_str[3:].replace(',', ''))
-    rate = int(rate_str[0:1])
+    rate = int(rate_str[0:2])
     other = [money, rate, tender_id]
     return other
 
