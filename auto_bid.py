@@ -189,12 +189,12 @@ def auto_bid(lendtable):
 def parse_lend_time(tag):
     time_str = str(tag.contents[1].contents[0])
     time = (time_str.split('>')[1]).split('<')[0]
-    return int(time)
+    return int(time[0:1])
 
 def parse_lend_schedule(tag):
     schedult_str = str(tag.contents[1].contents[0].contents[0])
     schedult = (schedult_str.split('%')[1]).split('>')[1]
-    return int(schedult)
+    return int(schedult[0:1])
 
 def parse_other(tag):
     money_str = str(tag.contents[1].contents[0])
@@ -300,13 +300,13 @@ def main():
         lendtable = sort_lendtable(lendtable)
 
         if lendtable == []:
-            print("%s --- check %d times." %(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), times))
+            #print("%s --- check %d times." %(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), times))
             times = times + 1
-            if times % 200 == 0:
+            if times % 400 == 0:
                 load_tend_web()
         else:
-            for dic in lendtable:
-                print dic
+            #for dic in lendtable:
+            #    print dic
             break
 
     auto_bid(lendtable)   
