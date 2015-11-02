@@ -118,7 +118,7 @@ def crop_verify_code(code_name):
     browser.save_screenshot(pay_name)
     #crop the verify code image
     im = Image.open(pay_name)
-    box = (500, 300, 800, 600)
+    box = (870, 410, 922, 425)
     region = im.crop(box)
     region.save(code_name)
 
@@ -164,19 +164,23 @@ def auto_bid(lendtable):
     max_rest_no = lendtable[0]['no']
     xpath_id = 5 * max_rest_no
     xpath = "/html/body/div[8]/div[2]/div[4]/dl/dd[" + str(xpath_id) + "]/a"
-    browser.save_screenshot("before.png")
+    #browser.save_screenshot("before.png")
     browser.find_element_by_xpath(xpath).click()
-    #sleep(1)
-    browser.save_screenshot("click.png")
-    # maybe need input money
+    sleep(1)
+    #browser.save_screenshot("click.png")
+    # TODO: input money
+    # click 'auto input'
+    browser.find_element_by_xpath("//*[@id=\"fastLender_1\"]/div[2]/div/p[2]/a").click()
     # input pay password
     browser.find_element_by_xpath("//*[@id=\"paypassowrd\"]").send_keys(paypasswd)
-    browser.save_screenshot("enter_paypass.png")
+    #browser.save_screenshot("enter_paypass.png")
     # get and input verify code
     verify_code = get_verify_code()
     browser.find_element_by_xpath("//*[@id=\"tenderRecordRandCode\"]").send_keys(verify_code)
+    browser.save_screenshot("before_bid.png")
     # make sure bid
-    #browser.find_element_by_xpath("//*[@id=\"fastLender_1\"]/div[2]/div/p[6]/input[2]").click()
+    browser.find_element_by_xpath("//*[@id=\"fastLender_1\"]/div[2]/div/p[6]/input[2]").click()
+    browser.save_screenshot("finish_bid.png")
 
 def parse_lend_time(tag):
     time_str = str(tag.contents[1].contents[0])
@@ -184,7 +188,7 @@ def parse_lend_time(tag):
     return int(time)
 
 def parse_lend_schedule(tag):
-    schedul2_str = str(tag.contents[1].contents[0].contents[0])
+    schedule_str = str(tag.contents[1].contents[0].contents[0])
     schedule = (schedule_str.split('%')[1]).split('>')[1]
     # just get integer
     schedule = schedule.split('.')[0]
@@ -262,7 +266,6 @@ def parse_lendtable():
                 dic['tender_id'] = other.pop()
                 dic['rate'] = other.pop()
                 dic['money'] = other.pop()
-
             if i % 12 == 0:
                 i = 0;
                 j = j + 1
