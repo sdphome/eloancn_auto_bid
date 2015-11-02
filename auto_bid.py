@@ -181,12 +181,14 @@ def auto_bid(lendtable):
 def parse_lend_time(tag):
     time_str = str(tag.contents[1].contents[0])
     time = (time_str.split('>')[1]).split('<')[0]
-    return int(time[0:1])
+    return int(time)
 
 def parse_lend_schedule(tag):
-    schedult_str = str(tag.contents[1].contents[0].contents[0])
-    schedult = (schedult_str.split('%')[1]).split('>')[1]
-    return int(schedult[0:3])
+    schedul2_str = str(tag.contents[1].contents[0].contents[0])
+    schedule = (schedule_str.split('%')[1]).split('>')[1]
+    # just get integer
+    schedule = schedule.split('.')[0]
+    return int(schedule)
 
 def parse_other(tag):
     money_str = str(tag.contents[1].contents[0])
@@ -246,13 +248,15 @@ def parse_lendtable():
             i == 12: count, useless
             """
             if i == 8:
-                time = parse_lend_time(c3_child)
-                dic['time'] = time
-            elif i == 10:
+                # now time is useless, ignore it.
+                #time = parse_lend_time(c3_child)
+                #dic['time'] = time
                 pass
+            elif i == 10:
                 schedule = parse_lend_schedule(c3_child)
                 dic['schedule'] = schedule
-                dic['rest'] = dic['money']/100*(100-dic['schedule'])
+                # in case schedule is noninteger, so -1
+                dic['rest'] = dic['money']/100*(100-dic['schedule']-1)
             elif i == 6:
                 other = parse_other(c3_child)
                 dic['tender_id'] = other.pop()
@@ -264,10 +268,11 @@ def parse_lendtable():
                 j = j + 1
                 dic['no'] = j
                 # filter table
-                if dic['rest'] == 0 or dic['rate'] < 18:
+                if dic['rest'] <= 0 or dic['rate'] < 18:
                     #print("Drop this bid, schedule=%d, rate=%d." %(dic['schedule'], dic['rate']))
                     pass
                 else:
+                    print dic
                     table.append(dic)
                 dic = {}    # new dictionary
 
