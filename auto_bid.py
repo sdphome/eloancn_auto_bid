@@ -19,12 +19,13 @@ need put chromedriver.exe path into PATH
 3. BeautifulSoup for parse html
 """
 
-global login_url, tender_url, username, password, paypasswd, browser, balance, total_interest, total_assets
+global login_url, tender_url, username, password, paypasswd, browser, balance, total_interest, total_assets, myhome_url
 
 def init_global():
     global login_url, tender_url, username, password, paypasswd, browser, balance, total_interest, total_assets
     login_url = "https://passport.eloancn.com/login?service=http%3A%2F%2Fwww.eloancn.com%2Fpage%2FuserMgr%2FmyHome.jsp%3Furl%3Dfresh%2FuserDefaultMessage.action%26menuid%3D1%26timestamp%3D14447502342114579"
     tender_url = "http://www.eloancn.com/new/loadAllTender.action"
+    myhome_url = "http://www.eloancn.com/page/userMgr/myHome.jsp"
     username = "15251611350"
     password = "xuyihua3590321"
     paypasswd = "xuyihua3590321"
@@ -69,6 +70,15 @@ def login_eloance():
 
     print("login successful!!!")
 
+def goto_myhome():
+    global myhome_url
+    try:
+        browser.set_page_load_timeout(5)
+        browser.get(myhome_url)
+        browser.execute_script('window.stop()')
+    except:
+        # TODO : check if enter successful
+        pass
 
 def unicode_to_int(u_data):
     temp1 = u_data.split('.')
@@ -82,6 +92,7 @@ def get_balance():
     webdata = browser.find_element_by_id("statField2").text
     balance = unicode_to_int(webdata)
     print("userful balance is %d元" %balance)
+    return balance
 
 def get_total_interest():
     global total_interest, browser
@@ -174,13 +185,16 @@ def auto_bid(lendtable):
     # input pay password
     browser.find_element_by_xpath("//*[@id=\"paypassowrd\"]").send_keys(paypasswd)
     #browser.save_screenshot("enter_paypass.png")
+    while True:
     # get and input verify code
-    verify_code = get_verify_code()
-    browser.find_element_by_xpath("//*[@id=\"tenderRecordRandCode\"]").send_keys(verify_code)
-    browser.save_screenshot("before_bid.png")
-    # make sure bid
-    browser.find_element_by_xpath("//*[@id=\"fastLender_1\"]/div[2]/div/p[6]/input[2]").click()
-    browser.save_screenshot("finish_bid.png")
+        verify_code = get_verify_code()
+        browser.find_element_by_xpath("//*[@id=\"tenderRecordRandCode\"]").send_keys(verify_code)
+        browser.save_screenshot("before_bid.png")
+        # make sure bid
+        browser.find_element_by_xpath("//*[@id=\"fastLender_1\"]/div[2]/div/p[6]/input[2]").click()
+        browser.save_screenshot("finish_bid.png")
+        if verify_code != "":
+            break
 
 def parse_lend_time(tag):
     time_str = str(tag.contents[1].contents[0])
@@ -287,34 +301,38 @@ def sort_lendtable(table):
     return table
 
 def main():
-    global browser
     init_global()
     open_chrome()
     login_eloance()
     #get_money()
 
-
-    times = 1
     while True:
-        lendtable = parse_lendtable()
-        lendtable = sort_lendtable(lendtable)
+        times = 1
+        while True:
+            lendtable = parse_lendtable()
+            lendtable = sort_lendtable(lendtable)
 
-        if lendtable == []:
-            #print("%s --- check %d times." %(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), times))
-            times = times + 1
-            if times % 400 == 0:
-                load_tend_web()
-        else:
-            #for dic in lendtable:
-            #    print dic
+            if lendtable == []:
+                #print("%s --- check %d times." %(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), times))
+                times = times + 1
+                if times % 400 == 0:
+                    load_tend_web()
+            else:
+                #for dic in lendtable:
+                #    print dic
+                break
+
+        auto_bid(lendtable)
+        goto_myhome()
+        balance = get_balance()
+        if balance < 100:
+            print("now balance is %d元." %balance)
             break
-
-    auto_bid(lendtable)   
 
     print("End")
 
-    #browser.get(tender_url)
-    #browser.quit()
+    browser.get(tender_url)
+    browser.quit()
 
 
 # main function
