@@ -48,7 +48,7 @@ def open_chrome():
 
 def login_eloance():
     global browser, login_url, username, password
-
+    print("login website!")
     # auto login
     try:
         browser.set_page_load_timeout(5)
@@ -58,12 +58,9 @@ def login_eloance():
         # TODO : check if enter successful
         pass
 
-    print("login website!")
-    elem = browser.find_element_by_id("loginName")
-    #screen_shot(elem)
-    browser.find_element_by_id("loginName").send_keys([username, Keys.TAB, password, Keys.ENTER])
-    sleep(5)
     print("Enter username and password")
+    browser.find_element_by_id("loginName").send_keys([username, Keys.TAB, password, Keys.ENTER])
+    sleep(2)
 
     #cookie= browser.get_cookies()
     #print cookie
@@ -123,23 +120,20 @@ def load_tend_web():
         #print("load_tend_web except")
         pass
 
-def crop_verify_code(code_name):
+def get_verify_code():
     global browser
+    threshold = 140
+    table = []
     pay_name = "pay.png"
+    verify_path = "verify.png"
+
     browser.save_screenshot(pay_name)
+
     #crop the verify code image
     im = Image.open(pay_name)
     box = (870, 410, 922, 425)
     region = im.crop(box)
-    region.save(code_name)
-
-def get_verify_code():
-    threshold = 140
-    code_name = "code.png"
-    table = []
-
-    # get verify code picture
-    crop_verify_code(code_name)
+    #region.save(verify_path)
 
     for i in range(256):
         if i < threshold:
@@ -152,26 +146,35 @@ def get_verify_code():
            'Z':'2',
            'S':'8'
            };
-    im = Image.open(code_name)
+    #im = Image.open(verify_path)
+    im = region
     imgry = im.convert('L')
-    imgry.save('g'+code_name)
+    #imgry.save('g'+verify_path)
 
     out = imgry.point(table, '1')
-    out.save('b' + code_name)
+    #out.save('b' + verify_path)
+
+    #ff = Image.open('b' + verify_path)
 
     text = image_to_string(out)
 
-    text = text.strip()
-    text = text.upper()
+    #text = text.strip()
+    #text = text.upper()
 
-    for r in rep:
-        text = text.replace(r, rep[r])
-    print(text)
+    #for r in rep:
+    #    text = text.replace(r, rep[r])
+    #print(text)
     return text
 
-def auto_bid(lendtable):
+def auto_bid():
     global browser, paypasswd
     load_tend_web()
+    # reload data
+    lendtable = parse_lendtable()
+    lendtable = sort_lendtable(lendtable)
+    if lendtable == []:
+        return
+
     max_rest_no = lendtable[0]['no']
     xpath_id = 5 * max_rest_no
     xpath = "/html/body/div[8]/div[2]/div[4]/dl/dd[" + str(xpath_id) + "]/a"
@@ -186,14 +189,15 @@ def auto_bid(lendtable):
     browser.find_element_by_xpath("//*[@id=\"paypassowrd\"]").send_keys(paypasswd)
     #browser.save_screenshot("enter_paypass.png")
     while True:
-    # get and input verify code
+        # get and input verify code
         verify_code = get_verify_code()
         browser.find_element_by_xpath("//*[@id=\"tenderRecordRandCode\"]").send_keys(verify_code)
-        browser.save_screenshot("before_bid.png")
+        #browser.save_screenshot("before_bid.png")
         # make sure bid
         browser.find_element_by_xpath("//*[@id=\"fastLender_1\"]/div[2]/div/p[6]/input[2]").click()
-        browser.save_screenshot("finish_bid.png")
+        #browser.save_screenshot("finish_bid.png")
         if verify_code != "":
+            sleep(1)  # wait to bid success
             break
 
 def parse_lend_time(tag):
@@ -202,7 +206,7 @@ def parse_lend_time(tag):
     return int(time)
 
 def parse_lend_schedule(tag):
-    schedule_str = str(tag.contents[1].contents[0].contents[0])
+    schedule_str = str(tag)
     schedule = (schedule_str.split('%')[1]).split('>')[1]
     # just get integer
     schedule = schedule.split('.')[0]
@@ -236,12 +240,14 @@ def parse_lendtable():
     global tender_url
     table = [] # new array
 
-    try:
-        lend_page = urllib2.urlopen(tender_url).read()
-    except:
-        lend_page = ""
-        print("Internal Server Error")
-        pass
+    while True:
+        try:
+            lend_page = urllib2.urlopen(tender_url).read()
+        except:
+            lend_page = ""
+            print("Internal Server Error")
+            continue
+        break
 
     if lend_page != "":
         soup = BeautifulSoup(''.join(lend_page))
@@ -249,10 +255,9 @@ def parse_lendtable():
         c1_child = lendtable[0]         # 1
         c2_child = c1_child.contents[1] # 2
 
-        # TODO: if 100%, break
         # begin dividing:
         i = 0
-        j = 0       
+        j = 0
         dic = {}
         for c3_child in c2_child:
             i = i + 1
@@ -271,7 +276,7 @@ def parse_lendtable():
                 #dic['time'] = time
                 pass
             elif i == 10:
-                schedule = parse_lend_schedule(c3_child)
+                schedule = parse_lend_schedule(c3_child.contents[1].contents[0].contents[0])
                 dic['schedule'] = schedule
                 # in case schedule is noninteger, so -1
                 dic['rest'] = dic['money']/100*(100-dic['schedule']-1)
@@ -313,7 +318,7 @@ def main():
             lendtable = sort_lendtable(lendtable)
 
             if lendtable == []:
-                #print("%s --- check %d times." %(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), times))
+                print("%s --- check %d times." %(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), times))
                 times = times + 1
                 if times % 400 == 0:
                     load_tend_web()
@@ -322,12 +327,7 @@ def main():
                 #    print dic
                 break
 
-        auto_bid(lendtable)
-        goto_myhome()
-        balance = get_balance()
-        if balance < 100:
-            print("now balance is %d元." %balance)
-            break
+        auto_bid()
 
     print("End")
 
