@@ -166,39 +166,52 @@ def get_verify_code():
     #print(text)
     return text
 
-def auto_bid():
+def auto_bid(lendtable):
     global browser, paypasswd
     load_tend_web()
     # reload data
-    lendtable = parse_lendtable()
-    lendtable = sort_lendtable(lendtable)
-    if lendtable == []:
-        return
+    #lendtable = parse_lendtable()
+    #lendtable = sort_lendtable(lendtable)
+    #if lendtable == []:
+    #    return
 
     max_rest_no = lendtable[0]['no']
     xpath_id = 5 * max_rest_no
     xpath = "/html/body/div[8]/div[2]/div[4]/dl/dd[" + str(xpath_id) + "]/a"
     #browser.save_screenshot("before.png")
-    browser.find_element_by_xpath(xpath).click()
-    sleep(1)
-    #browser.save_screenshot("click.png")
-    # TODO: input money
-    # click 'auto input'
-    browser.find_element_by_xpath("//*[@id=\"fastLender_1\"]/div[2]/div/p[2]/a").click()
-    # input pay password
-    browser.find_element_by_xpath("//*[@id=\"paypassowrd\"]").send_keys(paypasswd)
-    #browser.save_screenshot("enter_paypass.png")
-    while True:
+    try:
+        browser.find_element_by_xpath(xpath).click()
+        sleep(1)
+        #browser.save_screenshot("click.png")
+        # TODO: input money
+        # click 'auto input'
+        browser.find_element_by_xpath("//*[@id=\"fastLender_1\"]/div[2]/div/p[2]/a").click()
+        # input pay password
+        browser.find_element_by_xpath("//*[@id=\"paypassowrd\"]").send_keys(paypasswd)
+        #browser.save_screenshot("enter_paypass.png")
+
         # get and input verify code
-        verify_code = get_verify_code()
+        verify_code = ""
+        num = 0
+        while verify_code == "" or num == 400:
+            verify_code = get_verify_code()
+            num = num + 1
+            if verify_code != "":
+                #sleep(1)  # wait to bid success
+                break
+            else:
+                print("verify is null, check again")
+        if verify_code == "":
+            return
         browser.find_element_by_xpath("//*[@id=\"tenderRecordRandCode\"]").send_keys(verify_code)
         #browser.save_screenshot("before_bid.png")
         # make sure bid
         browser.find_element_by_xpath("//*[@id=\"fastLender_1\"]/div[2]/div/p[6]/input[2]").click()
         #browser.save_screenshot("finish_bid.png")
-        if verify_code != "":
-            sleep(1)  # wait to bid success
-            break
+    except:
+        pass
+        print("auto_bid exception")
+
 
 def parse_lend_time(tag):
     time_str = str(tag.contents[1].contents[0])
@@ -327,7 +340,7 @@ def main():
                 #    print dic
                 break
 
-        auto_bid()
+        auto_bid(lendtable)
 
     print("End")
 
