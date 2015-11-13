@@ -181,19 +181,12 @@ def auto_bid(lendtable):
     #browser.save_screenshot("before.png")
     try:
         browser.find_element_by_xpath(xpath).click()
-        sleep(1)
-        #browser.save_screenshot("click.png")
-        # TODO: input money
-        # click 'auto input'
-        browser.find_element_by_xpath("//*[@id=\"fastLender_1\"]/div[2]/div/p[2]/a").click()
-        # input pay password
-        browser.find_element_by_xpath("//*[@id=\"paypassowrd\"]").send_keys(paypasswd)
-        #browser.save_screenshot("enter_paypass.png")
+        sleep(2)
 
         # get and input verify code
         verify_code = ""
         num = 0
-        while verify_code == "" or num == 400:
+        while verify_code == "" or num == 20:
             verify_code = get_verify_code()
             num = num + 1
             if verify_code != "":
@@ -203,6 +196,15 @@ def auto_bid(lendtable):
                 print("verify is null, check again")
         if verify_code == "":
             return
+
+        #browser.save_screenshot("click.png")
+        # TODO: input money
+        # click 'auto input'
+        browser.find_element_by_xpath("//*[@id=\"fastLender_1\"]/div[2]/div/p[2]/a").click()
+        # input pay password
+        browser.find_element_by_xpath("//*[@id=\"paypassowrd\"]").send_keys(paypasswd)
+        #browser.save_screenshot("enter_paypass.png")
+
         browser.find_element_by_xpath("//*[@id=\"tenderRecordRandCode\"]").send_keys(verify_code)
         #browser.save_screenshot("before_bid.png")
         # make sure bid
@@ -315,7 +317,7 @@ def parse_lendtable():
 
 def sort_lendtable(table):
     #table.sort(lambda x, y:cmp(x['rest'], y['rest']))
-    table = sorted(table, key=lambda x:x['rest'], reverse=True)
+    table = sorted(table, key=lambda x:x['rate'], reverse=True)
     return table
 
 def main():
@@ -331,13 +333,14 @@ def main():
             lendtable = sort_lendtable(lendtable)
 
             if lendtable == []:
-                print("%s --- check %d times." %(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), times))
+                #print("%s --- check %d times." %(str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), times))
                 times = times + 1
                 if times % 400 == 0:
+                    print("load tend web")
                     load_tend_web()
             else:
-                #for dic in lendtable:
-                #    print dic
+                for dic in lendtable:
+                    print dic
                 break
 
         auto_bid(lendtable)
