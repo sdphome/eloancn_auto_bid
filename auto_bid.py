@@ -26,9 +26,9 @@ def init_global():
     login_url = "https://passport.eloancn.com/login?service=http%3A%2F%2Fwww.eloancn.com%2Fpage%2FuserMgr%2FmyHome.jsp%3Furl%3Dfresh%2FuserDefaultMessage.action%26menuid%3D1%26timestamp%3D14447502342114579"
     tender_url = "http://www.eloancn.com/new/loadAllTender.action"
     myhome_url = "http://www.eloancn.com/page/userMgr/myHome.jsp"
-    username = "15251611350"
-    password = "xuyihua3590321"
-    paypasswd = "xuyihua3590321"
+    username = "15821020012"
+    password = "kdfj239dla"
+    paypasswd = "asdldaef"
     balance = 0
     total_interest = 0
     total_assets = 0
