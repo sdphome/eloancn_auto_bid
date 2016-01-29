@@ -9,7 +9,6 @@ import urllib, urllib2
 from PIL import Image
 from pytesseract import image_to_string
 from BeautifulSoup import BeautifulSoup
-
 import datetime
 
 """
@@ -238,7 +237,6 @@ def parse_other(tag):
     other = [money, rate, tender_id]
     return other
 
-
 """
 1. get >=18% bid
 2. sort bid money
@@ -349,7 +347,6 @@ def main():
 
     browser.get(tender_url)
     browser.quit()
-
 
 # main function
 if __name__ == '__main__':
